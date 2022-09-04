@@ -1,5 +1,6 @@
-#from airflow.hooks.postgres_hook import PostgresHook
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.providers.postgres.operators.postgres import PostgresOperator
 
 import logging
 
@@ -32,3 +33,13 @@ def api_to_s3(path, access_key, secret_key, bucket_name, ds_nodash) -> None:
             bucket_name=bucket_name,
             replace=True
         )
+
+def s3_to_postgres() -> None:
+
+    # Step1: Connect to s3 bucket to get files
+    # Loops through files in each folder and store them in df
+
+
+    # Step 2: Connect to postgres using PostgresHook
+    # Read the data from df and load them using PostGresOperator
+    hook = PostgresHook(postgres_conn_id="postgres_localhost")
