@@ -58,6 +58,8 @@ with DAG (
                     "bucket_name": bucket_name,
                 }
             )
+
+    # Define Task Group with Postgres Operator to create table if it doesn't exsit
     with TaskGroup('create_postgres_table') as create_postgres_table:
         for path in paths:
             create_sql_script = PostgresOperator(

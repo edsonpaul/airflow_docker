@@ -33,7 +33,6 @@ def api_to_s3(path, access_key, secret_key, bucket_name, ds_nodash) -> None:
             replace=True
         )
 
-
 def s3_to_postgres(path, bucket_name, ds_nodash) -> None:
     import pandas as pd
     import os
@@ -64,12 +63,18 @@ def s3_to_postgres(path, bucket_name, ds_nodash) -> None:
     with open(new_file_name, 'r') as j:
         contents = json.loads(j.read())
     
-    
+    dict_list = []
     df = pd.DataFrame()
     for result in contents['results']:
         df = df.append(result, ignore_index=True)
-    # Use dataframe apply for json field
-    df['multimedia'] = df['multimedia'].apply(json.dumps)
+        # Keep record of fields with dict/json values
+        for key, value in result.items():
+            if isinstance(value, dict):
+                dict_list.append(key) if key not in dict_list else dict_list
+    
+    for d in dict_list:
+        df[d] = df[d].apply(json.dumps)
+        # df['{}'.format(d)] = df['{}'.format(d)].apply(json.dumps)
 
     # df = df.replace(r'\r+|\n+|\t+','', regex=True)
     # df = df.replace(to_replace=[r"\\t|\\n|\\r", "\t|\n|\r"], value=["",""], regex=True, inplace=True)
@@ -103,7 +108,7 @@ def s3_to_postgres(path, bucket_name, ds_nodash) -> None:
     tuples = [tuple(x) for x in df.to_numpy()]
     cols = ','.join(list(df.columns))
     # SQL query to execute insert
-    query = "INSERT INTO %s(%s) VALUES %%s" % (path, cols) # path is also the tables name
+    query = "INSERT INTO %s(%s) VALUES %%s" % (path, cols) # path is also the table's name
 
     extras.register_default_json(loads=lambda x: x)
     extras.execute_values(cursor, query, tuples)
@@ -114,24 +119,3 @@ def s3_to_postgres(path, bucket_name, ds_nodash) -> None:
     if conn is not None:
         conn.close()
         print('Database connection closed.')
-
-
-
-    # DATABASE_LOCATION = 'postgresql://airflow:airflow@host.docker.internal:5432/test'
-    # DATABASE_LOCATION = 'postgresql://airflow:airflow@localhost:5432/test'
-    # engine = sqlalchemy.create_engine(DATABASE_LOCATION)
-    # print(f"Engine: {engine}")
-    # df.to_sql(
-    #     "critics",
-    #     engine,
-    #     schema='public',
-    #     index=False,
-    #     if_exists='append',
-    #     dtype={"bets": sqlalchemy.types.JSON}
-    # )
-
-    # try:
-    #     logging.info("Trying to load the data.")
-        
-    # except:
-    #     print("Data already exists in the database")
