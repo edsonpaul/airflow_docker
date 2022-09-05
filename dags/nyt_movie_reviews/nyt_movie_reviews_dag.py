@@ -13,6 +13,7 @@ import os
 from nyt_movie_reviews.utils import api_to_s3, s3_to_postgres
 
 # Variables used by tasks
+DAG_DESC = 'DAG to extract Movie Reviews from the New York Times API and insert them into a PostgreSQL database'
 DAG_ID = os.path.basename(__file__).replace(".pyc", "").replace(".py", "")
 NYT_API_TOKEN = Variable.get('NYT_API_TOKEN')
 NYT_API_SECRET = Variable.get('NYT_API_SECRET')
@@ -35,6 +36,7 @@ default_args ={
 with DAG (
     DAG_ID,
     default_args=default_args,
+    description=DAG_DESC,
     start_date=datetime(2022, 9, 1),
     schedule_interval='0 0 * * *',
     tags=["nyt"],
@@ -83,11 +85,12 @@ with DAG (
             )
 
     # Define task to send email
-    # send_email = EmailOperator(
-    #     task_id='send_email',
-    #     to=email_notification_list,
-    #     subject='NYT Movie Reviews DAG',
-    #     html_content='<p>The NYT Movie Reviews DAG completed successfully. <p>'
-    # )
+    send_email = EmailOperator(
+        task_id='send_email',
+        to=email_notification_list,
+        subject='NYT Movie Reviews DAG',
+        html_content='<p>The NYT Movie Reviews DAG completed successfully. <p>'
+    )
 
     task0 >> api_paths_extract >> create_postgres_table >> load_to_postgres
+    load_to_postgres >> send_email
