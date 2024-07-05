@@ -1,0 +1,5 @@
+# Extra pypi packages to install
+apache-airflow-backport-providers-google==2020.11.23
+py7zr==0.14.1
+pyodbc==4.0.30
+boto3==1.18.19
